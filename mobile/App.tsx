@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { DEFAULT_API_URL, makeClient } from "./src/api";
+import { DEFAULT_API_URL, loadApiUrl, makeClient, saveApiUrl } from "./src/api";
 import { theme } from "./src/theme";
 import { BoardsScreen } from "./src/screens/BoardsScreen";
 import { BoardScreen } from "./src/screens/BoardScreen";
@@ -17,6 +17,16 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: "boards" });
   const client = useMemo(() => makeClient(apiUrl), [apiUrl]);
 
+  // Load the saved API URL once on launch.
+  useEffect(() => {
+    loadApiUrl().then(setApiUrl);
+  }, []);
+
+  const changeApiUrl = useCallback((url: string) => {
+    setApiUrl(url);
+    saveApiUrl(url);
+  }, []);
+
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="light" />
@@ -24,7 +34,7 @@ export default function App() {
         <BoardsScreen
           client={client}
           apiUrl={apiUrl}
-          onApiUrlChange={setApiUrl}
+          onApiUrlChange={changeApiUrl}
           onOpenBoard={(boardId) => setScreen({ name: "board", boardId })}
         />
       )}

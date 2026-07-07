@@ -23,6 +23,7 @@ export function BoardsScreen({ client, apiUrl, onApiUrlChange, onOpenBoard }: Pr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [draftUrl, setDraftUrl] = useState(apiUrl);
+  const [newBoard, setNewBoard] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,6 +40,23 @@ export function BoardsScreen({ client, apiUrl, onApiUrlChange, onOpenBoard }: Pr
   useEffect(() => {
     load();
   }, [load]);
+
+  // Reflect the persisted URL once it loads asynchronously at startup.
+  useEffect(() => {
+    setDraftUrl(apiUrl);
+  }, [apiUrl]);
+
+  async function createBoard() {
+    const name = newBoard.trim();
+    if (!name) return;
+    try {
+      const created = await client.createBoard(name);
+      setNewBoard("");
+      onOpenBoard(created.id); // open it, like the desktop does
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -64,6 +82,20 @@ export function BoardsScreen({ client, apiUrl, onApiUrlChange, onOpenBoard }: Pr
         <Text style={styles.label}>Subjects</Text>
         <Pressable onPress={load}>
           <Text style={styles.link}>Refresh</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.row}>
+        <TextInput
+          style={styles.input}
+          value={newBoard}
+          onChangeText={setNewBoard}
+          placeholder="New board…"
+          placeholderTextColor={theme.muted}
+          onSubmitEditing={createBoard}
+        />
+        <Pressable style={styles.smallBtn} onPress={createBoard}>
+          <Text style={styles.smallBtnText}>Create</Text>
         </Pressable>
       </View>
 

@@ -22,6 +22,7 @@ export function BoardScreen({ client, boardId, onBack, onOpenTask }: Props) {
   const [board, setBoard] = useState<Board | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
+  const [laneId, setLaneId] = useState<number | null>(null); // swimlane to add into
 
   const load = useCallback(async () => {
     try {
@@ -36,13 +37,20 @@ export function BoardScreen({ client, boardId, onBack, onOpenTask }: Props) {
     load();
   }, [load]);
 
+  // Default the "add to" swimlane to the first column once the board loads.
+  useEffect(() => {
+    if (!board) return;
+    const lanes = [...board.swimlanes].sort((a, b) => a.position - b.position);
+    if (lanes.length && (laneId == null || !lanes.some((l) => l.id === laneId))) {
+      setLaneId(lanes[0].id);
+    }
+  }, [board, laneId]);
+
   async function addTask() {
-    if (!newTitle.trim() || !board) return;
-    const lane = [...board.swimlanes].sort((a, b) => a.position - b.position)[0];
-    if (!lane) return;
+    if (!newTitle.trim() || !board || laneId == null) return;
     await client.createTask({
       board_id: boardId,
-      swimlane_id: lane.id,
+      swimlane_id: laneId,
       title: newTitle.trim(),
     });
     setNewTitle("");
@@ -85,6 +93,26 @@ export function BoardScreen({ client, boardId, onBack, onOpenTask }: Props) {
           <Text style={styles.smallBtnText}>Add</Text>
         </Pressable>
       </View>
+
+      {swimlanes.length > 1 && (
+        <View style={styles.laneChips}>
+          <Text style={styles.addToLabel}>Add to:</Text>
+          {swimlanes.map((lane) => {
+            const active = lane.id === laneId;
+            return (
+              <Pressable
+                key={lane.id}
+                style={[styles.laneChip, active && styles.laneChipActive]}
+                onPress={() => setLaneId(lane.id)}
+              >
+                <Text style={[styles.laneChipText, active && styles.laneChipTextActive]}>
+                  {lane.name}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       <ScrollView>
         {swimlanes.map((lane: Swimlane) => {
@@ -146,6 +174,25 @@ const styles = StyleSheet.create({
   },
   smallBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 14, justifyContent: "center" },
   smallBtnText: { color: "#fff", fontWeight: "600" },
+  laneChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 14,
+  },
+  addToLabel: { color: theme.muted, fontSize: 12, marginRight: 2 },
+  laneChip: {
+    backgroundColor: theme.panel,
+    borderColor: theme.border,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  laneChipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+  laneChipText: { color: theme.text, fontSize: 12 },
+  laneChipTextActive: { color: "#fff", fontWeight: "600" },
   column: { marginBottom: 18 },
   colHead: {
     color: theme.muted,

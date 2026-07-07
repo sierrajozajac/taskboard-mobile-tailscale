@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +11,9 @@ import {
 } from "react-native";
 import type { Board, Task, TaskBoardClient } from "@taskboard/shared";
 import { theme } from "../theme";
+
+const PROGRESS_PRESETS = [0, 25, 50, 75, 100];
+const clampProgress = (n: number) => Math.max(0, Math.min(100, n));
 
 interface Props {
   client: TaskBoardClient;
@@ -22,6 +26,7 @@ export function TaskScreen({ client, boardId, taskId, onBack }: Props) {
   const [board, setBoard] = useState<Board | null>(null);
   const [task, setTask] = useState<Task | null>(null);
   const [comment, setComment] = useState("");
+  const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -33,6 +38,27 @@ export function TaskScreen({ client, boardId, taskId, onBack }: Props) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Seed the editable description once the task first loads (keyed on id so a
+  // background reload doesn't clobber an in-progress edit).
+  useEffect(() => {
+    if (task) setDescription(task.description);
+  }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function patch(fields: { description?: string; progress?: number }) {
+    if (!task) return;
+    setTask(await client.updateTask(task.id, fields));
+  }
+
+  function saveDescription() {
+    if (task && description !== task.description) patch({ description });
+  }
+
+  function changeProgress(value: number) {
+    if (!task) return;
+    const next = clampProgress(value);
+    if (next !== task.progress) patch({ progress: next });
+  }
 
   async function move(swimlaneId: number) {
     if (!task || swimlaneId === task.swimlane_id) return;
@@ -50,6 +76,21 @@ export function TaskScreen({ client, boardId, taskId, onBack }: Props) {
     await client.addComment(task.id, comment.trim());
     setComment("");
     load();
+  }
+
+  function confirmDelete() {
+    if (!task) return;
+    Alert.alert("Delete task", `Delete "${task.title}"? This can't be undone.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await client.deleteTask(task.id);
+          onBack();
+        },
+      },
+    ]);
   }
 
   if (!board || !task) {
@@ -78,7 +119,41 @@ export function TaskScreen({ client, boardId, taskId, onBack }: Props) {
       <View style={styles.bar}>
         <View style={[styles.barFill, { width: `${task.progress}%` }]} />
       </View>
-      <Text style={styles.progressLabel}>{task.progress}% complete</Text>
+
+      <Text style={styles.label}>Progress · {task.progress}%</Text>
+      <View style={styles.progressRow}>
+        <Pressable style={styles.stepBtn} onPress={() => changeProgress(task.progress - 10)}>
+          <Text style={styles.stepBtnText}>−10</Text>
+        </Pressable>
+        {PROGRESS_PRESETS.map((p) => {
+          const active = p === task.progress;
+          return (
+            <Pressable
+              key={p}
+              style={[styles.presetChip, active && styles.presetChipActive]}
+              onPress={() => changeProgress(p)}
+            >
+              <Text style={[styles.presetChipText, active && styles.presetChipTextActive]}>
+                {p}
+              </Text>
+            </Pressable>
+          );
+        })}
+        <Pressable style={styles.stepBtn} onPress={() => changeProgress(task.progress + 10)}>
+          <Text style={styles.stepBtnText}>+10</Text>
+        </Pressable>
+      </View>
+
+      <Text style={styles.label}>Description</Text>
+      <TextInput
+        style={styles.textarea}
+        value={description}
+        onChangeText={setDescription}
+        onBlur={saveDescription}
+        multiline
+        placeholder="Add a description…"
+        placeholderTextColor={theme.muted}
+      />
 
       <Text style={styles.label}>Move to (prints a receipt)</Text>
       <View style={styles.statusRow}>
@@ -121,6 +196,10 @@ export function TaskScreen({ client, boardId, taskId, onBack }: Props) {
           <Text style={styles.smallBtnText}>Add</Text>
         </Pressable>
       </View>
+
+      <Pressable style={styles.deleteBtn} onPress={confirmDelete}>
+        <Text style={styles.deleteBtnText}>Delete task</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -177,4 +256,47 @@ const styles = StyleSheet.create({
   },
   smallBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 14, justifyContent: "center" },
   smallBtnText: { color: "#fff", fontWeight: "600" },
+
+  progressRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
+  stepBtn: {
+    backgroundColor: theme.panel,
+    borderColor: theme.border,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  stepBtnText: { color: theme.text, fontSize: 13, fontWeight: "600" },
+  presetChip: {
+    backgroundColor: theme.panel,
+    borderColor: theme.border,
+    borderWidth: 1,
+    borderRadius: 999,
+    minWidth: 38,
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  presetChipActive: { backgroundColor: theme.green, borderColor: theme.green },
+  presetChipText: { color: theme.text, fontSize: 12 },
+  presetChipTextActive: { color: "#04110a", fontWeight: "700" },
+  textarea: {
+    backgroundColor: theme.panel,
+    color: theme.text,
+    borderColor: theme.border,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    minHeight: 84,
+    textAlignVertical: "top",
+  },
+  deleteBtn: {
+    marginTop: 28,
+    borderColor: "#6b2b2b",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  deleteBtnText: { color: "#f3b1b1", fontSize: 14 },
 });
