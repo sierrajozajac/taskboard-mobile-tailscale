@@ -74,3 +74,26 @@ Open the project in **Expo Go** on your phone (same Wi-Fi as the PC). On the fir
 | API | `http://127.0.0.1:8000` (`/docs` for Swagger) |
 | Desktop dev server | `http://localhost:1420` |
 | Mobile | Expo Go, pointed at the PC's `http://<lan-ip>:8000` |
+
+## Auto-start the API on Windows (optional)
+
+To keep the API running so it's always available (e.g. over a Tailscale mesh from your phone),
+[`api/serve-hidden.vbs`](../api/serve-hidden.vbs) launches uvicorn **windowless**, bound to
+`0.0.0.0`, logging to `api/api.log`. Point a shortcut at it from your Startup folder so it runs at
+logon (no admin needed):
+
+```powershell
+$vbs   = (Resolve-Path .\api\serve-hidden.vbs).Path
+$lnk   = Join-Path ([Environment]::GetFolderPath('Startup')) 'TaskBoard API.lnk'
+$ws    = New-Object -ComObject WScript.Shell
+$sc    = $ws.CreateShortcut($lnk)
+$sc.TargetPath = "$env:SystemRoot\System32\wscript.exe"
+$sc.Arguments  = "`"$vbs`""
+$sc.Save()
+```
+
+Notes:
+- The PC must be **awake** and Tailscale running for remote access; a sleeping PC is unreachable.
+- `pythonw` needs its output redirected (the `.vbs` sends it to `api.log`) — without a valid
+  stdout/stderr, uvicorn's logging kills the process.
+- For restart-on-crash / start-before-logon, register a Scheduled Task instead (needs admin).
