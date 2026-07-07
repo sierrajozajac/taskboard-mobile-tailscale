@@ -55,6 +55,9 @@ class ConsolePrinter:
         print(border + "\n", file=sys.stderr)
         self._lines.clear()
 
+    def close(self) -> None:  # parity with the escpos printer interface
+        pass
+
 
 def _open_printer():
     """Return an object exposing .set/.text/.cut for the active PRINT_MODE."""
@@ -105,12 +108,24 @@ def _progress_bar(progress: int) -> str:
     return "[" + "#" * filled + "." * (slots - filled) + f"]{progress:>3}%"
 
 
-def print_task_created(*, board: str, swimlane: str, title: str, progress: int) -> None:
+def _emit(kind: str, lines: list[tuple[str, str]]) -> None:
+    """Open the printer, write one card, and always close the job.
+
+    close() is what finalizes the Windows spool document (EndDocPrinter). Without
+    it the receipt sits buffered until a later job flushes it — the reason moves
+    appeared to "pile up" and print several moves late.
+    """
     printer = _open_printer()
-    _card(
-        printer,
-        kind="NEW TASK",
-        lines=[
+    try:
+        _card(printer, kind=kind, lines=lines)
+    finally:
+        printer.close()
+
+
+def print_task_created(*, board: str, swimlane: str, title: str, progress: int) -> None:
+    _emit(
+        "NEW TASK",
+        [
             ("TASK", title),
             ("BOARD", board),
             ("SWIMLANE", swimlane),
@@ -121,12 +136,10 @@ def print_task_created(*, board: str, swimlane: str, title: str, progress: int) 
 def print_task_moved(
     *, board: str, title: str, from_swimlane: str, to_swimlane: str, progress: int
 ) -> None:
-    printer = _open_printer()
     kind = "COMPLETED" if to_swimlane.strip().lower() in {"complete", "completed", "done"} else "MOVED"
-    _card(
-        printer,
-        kind=kind,
-        lines=[
+    _emit(
+        kind,
+        [
             ("TASK", title),
             ("BOARD", board),
             ("MOVE", f"{from_swimlane} -> {to_swimlane}"),

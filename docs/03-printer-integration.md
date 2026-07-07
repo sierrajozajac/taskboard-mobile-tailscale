@@ -68,6 +68,18 @@ So:
 
 The receipt is a notification about a change that already happened — never a precondition for it.
 
+## Gotcha: finalize every job
+
+`Win32Raw` prints through the Windows spooler: `open()` starts a spool document
+(`StartDocPrinter`), writes buffer to it, and **`close()` ends it (`EndDocPrinter`)** — and *ending*
+the document is what actually releases the receipt to the paper. A standalone script gets this for
+free because the process exits after printing, which finalizes the job. A long-running server does
+not: if you open a fresh printer per event and never close it, each receipt sits buffered in the
+spooler until some later job flushes it, so moves appear to "pile up" and print several moves late.
+
+The fix is one line of discipline — `printing._emit()` writes each card inside a `try/finally` that
+always calls `printer.close()`, so every move finalizes its own job and prints immediately.
+
 ## Turning on real printing
 
 1. Install Rongta's Windows driver so the RP850 shows up as a printer.
