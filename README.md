@@ -74,9 +74,10 @@ With `PRINT_MODE=console` you can build and demo everything without the printer;
 | `mobile/` | Expo / React Native mobile app |
 | `docs/` | Architecture, data model, printer integration write-ups + ADRs |
 
-## Tech write-ups
+## Docs & tech write-ups
 
-- [Architecture](docs/01-architecture.md)
-- [Data model](docs/02-data-model.md)
+- [Setup guide](docs/00-setup.md) — prerequisites and step-by-step for API, desktop, mobile
+- [Architecture](docs/01-architecture.md) — the shape and the reasoning
+- [Data model & API reference](docs/02-data-model.md)
 - [Printer integration](docs/03-printer-integration.md)
 - [ADR 0001 — stack choices](docs/adr/0001-stack-choices.md)
