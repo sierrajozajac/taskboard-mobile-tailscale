@@ -1,0 +1,35 @@
+# Node
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.expo/
+.expo-shared/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Database & local secrets
+*.db
+*.db-journal
+*.sqlite3
+.env
+!.env.example
+
+# Tauri / Rust
+target/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

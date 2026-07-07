@@ -1,0 +1,20 @@
+{
+  "name": "taskboard",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A receipt-printing Kanban board: subjects, swimlanes, tasks that print to a Rongta RP850 thermal printer. Desktop (Tauri) + mobile (Expo) on a FastAPI + SQLite backend.",
+  "workspaces": [
+    "packages/*",
+    "desktop",
+    "mobile"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace @taskboard/shared",
+    "dev:desktop": "npm run tauri:dev --workspace desktop",
+    "dev:mobile": "npm run start --workspace mobile",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
