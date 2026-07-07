@@ -4,7 +4,8 @@
 
 A real, cross-platform task board where **every new task and every status change prints to a
 thermal receipt printer** (a Rongta RP850). Organize work into **subjects** (boards) and
-**swimlanes**, track **progress** and **comments**, from a **desktop app** or a **phone**.
+**swimlanes**, track **progress** and **comments**, from a **desktop app**, a **phone**, or **any
+browser** — including from outside your network over a private mesh (Tailscale).
 
 > Portfolio project. One backend of record, two clients, and a physical side effect: your tasks
 > come out of a printer.
@@ -16,15 +17,18 @@ flowchart LR
   subgraph Clients
     D["Desktop app<br/>(Tauri + React)"]
     M["Mobile app<br/>(Expo / React Native)"]
+    B["Any browser<br/>(phone / laptop)"]
   end
   D -- HTTP/JSON --> API
   M -- HTTP/JSON --> API
+  B -- HTTP/JSON --> API
   subgraph PC["Windows PC"]
     API["FastAPI backend<br/>(source of truth)"]
     DB[("SQLite<br/>tasks.db")]
     P["RP850 thermal printer<br/>(python-escpos)"]
     API --- DB
     API -- "on create / move" --> P
+    API -. "serves web board" .-> B
   end
   SH["packages/shared<br/>(TS types + API client)"] -.-> D
   SH -.-> M
@@ -34,7 +38,9 @@ flowchart LR
   to. Reuses a sibling `rp850-printer` project (`build_receipt` / `get_printer`) to print.
 - **Desktop** — Tauri (Rust shell) + React + TypeScript. Drag tasks between columns.
 - **Mobile** — Expo / React Native. Move tasks and comment from your phone on the same network.
-- **Shared** — one TypeScript package of API types + a typed client, used by both clients.
+- **Web board** — the API also serves the built React UI, so any browser can use the board at the
+  API's own address. The layout is responsive: on a phone the sidebar collapses into a drawer.
+- **Shared** — one TypeScript package of API types + a typed client, used by both native clients.
 
 ## Domain model
 
@@ -99,6 +105,21 @@ Then pick a client:
 
 The API must be running for any client to load. Change the API URL in the desktop sidebar / the
 mobile first screen if it isn't at `http://127.0.0.1:8000`.
+
+### 3. Use it from a browser (and away from home)
+
+If the web app is built (`npm run build --workspace desktop`), the API **serves the board itself** —
+open the API's address in any browser and you get the full UI, which auto-connects to that same
+origin. No separate dev server, no Expo:
+
+```
+http://<api-host>:8000
+```
+
+To reach it from outside your network, join the PC and your phone to a private mesh (**Tailscale**)
+and use the PC's mesh IP as `<api-host>` — no ports opened to the public internet, and the printer
+stays home. Keeping the API always-available (a windowless auto-start launcher) and the Tailscale
+setup are both covered in [`docs/00-setup.md`](docs/00-setup.md).
 
 ## Repository layout
 
