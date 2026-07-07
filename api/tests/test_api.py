@@ -10,54 +10,51 @@ def test_health(client):
     assert r.json()["status"] == "ok"
 
 
-def test_create_board_seeds_columns_and_lane(board):
-    names = [s["name"] for s in board["statuses"]]
-    assert names == ["Backlog", "To Do", "In Progress", "Done"]
-    assert [l["name"] for l in board["swimlanes"]] == ["General"]
+def test_create_board_seeds_swimlanes(board):
+    names = [s["name"] for s in board["swimlanes"]]
+    assert names == ["Pending", "In Progress", "Complete"]
     assert board["tasks"] == []
 
 
-def test_create_task_defaults_to_first_column(client, board):
-    lane = board["swimlanes"][0]["id"]
-    r = client.post("/tasks", json={"board_id": board["id"], "swimlane_id": lane, "title": "Ship it"})
+def test_create_task_defaults_to_first_swimlane(client, board):
+    r = client.post("/tasks", json={"board_id": board["id"], "title": "Ship it"})
     assert r.status_code == 201, r.text
     task = r.json()
-    first_col = board["statuses"][0]["id"]
-    assert task["status_id"] == first_col
+    first_lane = board["swimlanes"][0]["id"]
+    assert task["swimlane_id"] == first_lane
     assert task["title"] == "Ship it"
     assert task["progress"] == 0
 
 
-def test_move_task_changes_status_and_done_completes(client, board):
-    lane = board["swimlanes"][0]["id"]
-    task = client.post(
-        "/tasks", json={"board_id": board["id"], "swimlane_id": lane, "title": "Do the thing"}
-    ).json()
+def test_move_task_changes_swimlane_and_complete_finishes(client, board):
+    task = client.post("/tasks", json={"board_id": board["id"], "title": "Do the thing"}).json()
 
-    done_col = next(s for s in board["statuses"] if s["name"] == "Done")["id"]
-    r = client.post(f"/tasks/{task['id']}/move", json={"status_id": done_col})
+    complete = next(s for s in board["swimlanes"] if s["name"] == "Complete")["id"]
+    r = client.post(f"/tasks/{task['id']}/move", json={"swimlane_id": complete})
     assert r.status_code == 200, r.text
     moved = r.json()
-    assert moved["status_id"] == done_col
-    assert moved["progress"] == 100  # auto-completed in the Done column
+    assert moved["swimlane_id"] == complete
+    assert moved["progress"] == 100  # auto-completed in a done-style swimlane
 
 
-def test_move_rejects_status_from_another_board(client, board):
+def test_move_rejects_swimlane_from_another_board(client, board):
     other = client.post("/boards", json={"name": "Other"}).json()
-    lane = board["swimlanes"][0]["id"]
-    task = client.post(
-        "/tasks", json={"board_id": board["id"], "swimlane_id": lane, "title": "t"}
-    ).json()
-    foreign_col = other["statuses"][0]["id"]
-    r = client.post(f"/tasks/{task['id']}/move", json={"status_id": foreign_col})
+    task = client.post("/tasks", json={"board_id": board["id"], "title": "t"}).json()
+    foreign_lane = other["swimlanes"][0]["id"]
+    r = client.post(f"/tasks/{task['id']}/move", json={"swimlane_id": foreign_lane})
     assert r.status_code == 400
 
 
-def test_comments_roundtrip(client, board):
-    lane = board["swimlanes"][0]["id"]
+def test_create_swimlane_and_place_task(client, board):
+    lane = client.post(f"/boards/{board['id']}/swimlanes", json={"name": "Blocked"}).json()
     task = client.post(
-        "/tasks", json={"board_id": board["id"], "swimlane_id": lane, "title": "t"}
+        "/tasks", json={"board_id": board["id"], "swimlane_id": lane["id"], "title": "stuck"}
     ).json()
+    assert task["swimlane_id"] == lane["id"]
+
+
+def test_comments_roundtrip(client, board):
+    task = client.post("/tasks", json={"board_id": board["id"], "title": "t"}).json()
     c = client.post(f"/tasks/{task['id']}/comments", json={"body": "first note"})
     assert c.status_code == 201, c.text
     listing = client.get(f"/tasks/{task['id']}/comments").json()
@@ -65,10 +62,7 @@ def test_comments_roundtrip(client, board):
 
 
 def test_get_board_nests_tasks_and_comments(client, board):
-    lane = board["swimlanes"][0]["id"]
-    task = client.post(
-        "/tasks", json={"board_id": board["id"], "swimlane_id": lane, "title": "nested"}
-    ).json()
+    task = client.post("/tasks", json={"board_id": board["id"], "title": "nested"}).json()
     client.post(f"/tasks/{task['id']}/comments", json={"body": "hi"})
 
     full = client.get(f"/boards/{board['id']}").json()
@@ -77,7 +71,6 @@ def test_get_board_nests_tasks_and_comments(client, board):
 
 
 def test_delete_board_cascades(client, board):
-    lane = board["swimlanes"][0]["id"]
-    client.post("/tasks", json={"board_id": board["id"], "swimlane_id": lane, "title": "t"})
+    client.post("/tasks", json={"board_id": board["id"], "title": "t"})
     assert client.delete(f"/boards/{board['id']}").status_code == 204
     assert client.get(f"/boards/{board['id']}").status_code == 404

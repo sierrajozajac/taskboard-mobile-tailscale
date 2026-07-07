@@ -36,9 +36,9 @@ flowchart LR
 
 ## Domain model
 
-A board (**subject**) is a grid: **swimlanes** are the rows, **statuses** are the columns. A task
-lives in one cell and carries progress and comments. Moving it across columns changes its status and
-prints a receipt.
+A board (**subject**) is a set of **swimlanes** — the status columns (Pending, In Progress,
+Complete, …). A task lives in exactly one swimlane and carries progress and comments. Moving a task
+to a different swimlane is the status change that prints a receipt.
 
 See [`docs/02-data-model.md`](docs/02-data-model.md).
 

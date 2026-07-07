@@ -63,12 +63,12 @@ no printer attached — which is most machines.
 
 ## Request lifecycle: moving a task
 
-1. A client sends `POST /tasks/12/move { "status_id": 3 }`.
-2. The route validates the task and that the target column belongs to the same board.
-3. It records the *old* status name, updates the row, and commits. (If the target column is "Done",
-   progress snaps to 100%.)
-4. It registers a background task with the resolved board / lane / status **names** (by value, so
-   the task needs no DB session).
+1. A client sends `POST /tasks/12/move { "swimlane_id": 3 }`.
+2. The route validates the task and that the target swimlane belongs to the same board.
+3. It records the *old* swimlane name, updates the row, and commits. (If the target swimlane is
+   "Complete"/"Done", progress snaps to 100%.)
+4. It registers a background task with the resolved board / swimlane **names** (by value, so the
+   task needs no DB session).
 5. The response returns immediately. Afterward, the background task formats and prints the receipt —
    or logs a failure.
 

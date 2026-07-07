@@ -63,13 +63,12 @@ export function App() {
     setBoardId(created.id);
   }
 
-  async function handleCreateTask(swimlaneId: number, statusId: number) {
+  async function handleCreateTask(swimlaneId: number) {
     const title = prompt("New task title:");
     if (!title || boardId === null) return;
     await makeClient().createTask({
       board_id: boardId,
       swimlane_id: swimlaneId,
-      status_id: statusId,
       title,
     });
     refresh();
@@ -79,23 +78,22 @@ export function App() {
     const { active, over } = event;
     if (!over) return;
     const taskId = Number(active.id);
-    const [swimlaneId, statusId] = String(over.id).split(":").map(Number);
+    const swimlaneId = Number(over.id);
     const task = board?.tasks.find((t) => t.id === taskId);
-    if (!task) return;
-    if (task.swimlane_id === swimlaneId && task.status_id === statusId) return;
+    if (!task || task.swimlane_id === swimlaneId) return;
     // Optimistic move, then persist (persisting triggers the printer).
     setBoard((b) =>
       b
         ? {
             ...b,
             tasks: b.tasks.map((t) =>
-              t.id === taskId ? { ...t, swimlane_id: swimlaneId, status_id: statusId } : t,
+              t.id === taskId ? { ...t, swimlane_id: swimlaneId } : t,
             ),
           }
         : b,
     );
     try {
-      await makeClient().moveTask(taskId, { status_id: statusId, swimlane_id: swimlaneId });
+      await makeClient().moveTask(taskId, { swimlane_id: swimlaneId });
     } finally {
       refresh();
     }

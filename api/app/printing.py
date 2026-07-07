@@ -105,7 +105,7 @@ def _progress_bar(progress: int) -> str:
     return "[" + "#" * filled + "." * (slots - filled) + f"]{progress:>3}%"
 
 
-def print_task_created(*, board: str, swimlane: str, status: str, title: str, progress: int) -> None:
+def print_task_created(*, board: str, swimlane: str, title: str, progress: int) -> None:
     printer = _open_printer()
     _card(
         printer,
@@ -113,25 +113,23 @@ def print_task_created(*, board: str, swimlane: str, status: str, title: str, pr
         lines=[
             ("TASK", title),
             ("BOARD", board),
-            ("LANE", swimlane),
-            ("STATUS", status),
+            ("SWIMLANE", swimlane),
         ],
     )
 
 
 def print_task_moved(
-    *, board: str, swimlane: str, title: str, from_status: str, to_status: str, progress: int
+    *, board: str, title: str, from_swimlane: str, to_swimlane: str, progress: int
 ) -> None:
     printer = _open_printer()
-    kind = "COMPLETED" if to_status.lower() == "done" else "MOVED"
+    kind = "COMPLETED" if to_swimlane.strip().lower() in {"complete", "completed", "done"} else "MOVED"
     _card(
         printer,
         kind=kind,
         lines=[
             ("TASK", title),
             ("BOARD", board),
-            ("LANE", swimlane),
-            ("MOVE", f"{from_status} -> {to_status}"),
+            ("MOVE", f"{from_swimlane} -> {to_swimlane}"),
             ("PROGRESS", _progress_bar(progress)),
         ],
     )

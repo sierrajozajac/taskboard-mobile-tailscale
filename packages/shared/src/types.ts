@@ -12,7 +12,6 @@ export interface Task {
   id: number;
   board_id: number;
   swimlane_id: number;
-  status_id: number;
   title: string;
   description: string;
   progress: number; // 0-100
@@ -22,14 +21,8 @@ export interface Task {
   comments: Comment[];
 }
 
+// A swimlane is a status column (Pending, In Progress, Complete, ...).
 export interface Swimlane {
-  id: number;
-  board_id: number;
-  name: string;
-  position: number;
-}
-
-export interface Status {
   id: number;
   board_id: number;
   name: string;
@@ -46,15 +39,13 @@ export interface BoardSummary {
 
 export interface Board extends BoardSummary {
   swimlanes: Swimlane[];
-  statuses: Status[];
   tasks: Task[];
 }
 
 // --- Request payloads ---
 export interface CreateTaskInput {
   board_id: number;
-  swimlane_id: number;
-  status_id?: number;
+  swimlane_id?: number; // defaults to the board's first swimlane
   title: string;
   description?: string;
   progress?: number;
@@ -67,7 +58,6 @@ export interface UpdateTaskInput {
 }
 
 export interface MoveTaskInput {
-  status_id: number;
-  swimlane_id?: number;
+  swimlane_id: number;
   position?: number;
 }

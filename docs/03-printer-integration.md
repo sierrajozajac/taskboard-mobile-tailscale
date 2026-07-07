@@ -39,10 +39,8 @@ A console-mode "MOVED" card looks like this:
 |   Verify RP850 over HTTP |
 | BOARD                    |
 |   DevOps Certs           |
-| LANE                     |
-|   Study                  |
 | MOVE                     |
-|   Backlog -> In Progress |
+|   Pending -> In Progress |
 | PROGRESS                 |
 |   [................]  0% |
 | ======================== |
@@ -56,9 +54,9 @@ Two events, wired in [`events.py`](../api/app/events.py):
 | Event | Endpoint | Card |
 | --- | --- | --- |
 | Task created | `POST /tasks` | `NEW TASK` |
-| Task changes status | `POST /tasks/{id}/move` | `MOVED` (or `COMPLETED` when the target column is "Done") |
+| Task moved to another swimlane | `POST /tasks/{id}/move` | `MOVED` (or `COMPLETED` when the target swimlane is "Complete"/"Done") |
 
-Editing a task or adding a comment does **not** print — only creation and status changes do.
+Editing a task or adding a comment does **not** print — only creation and swimlane moves do.
 
 ## Best-effort by design
 

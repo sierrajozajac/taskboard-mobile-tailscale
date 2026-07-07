@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .db import init_db
-from .routers import boards, comments, statuses, swimlanes, tasks
+from .routers import boards, comments, swimlanes, tasks
 
 logging.basicConfig(level=logging.INFO)
 
@@ -42,7 +42,6 @@ app.add_middleware(
 
 app.include_router(boards.router)
 app.include_router(swimlanes.router)
-app.include_router(statuses.router)
 app.include_router(tasks.router)
 app.include_router(comments.router)
 

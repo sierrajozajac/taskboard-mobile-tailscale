@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import type { Board, Status, TaskBoardClient } from "@taskboard/shared";
+import type { Board, Swimlane, TaskBoardClient } from "@taskboard/shared";
 import { theme } from "../theme";
 
 interface Props {
@@ -39,12 +39,10 @@ export function BoardScreen({ client, boardId, onBack, onOpenTask }: Props) {
   async function addTask() {
     if (!newTitle.trim() || !board) return;
     const lane = [...board.swimlanes].sort((a, b) => a.position - b.position)[0];
-    const col = [...board.statuses].sort((a, b) => a.position - b.position)[0];
-    if (!lane || !col) return;
+    if (!lane) return;
     await client.createTask({
       board_id: boardId,
       swimlane_id: lane.id,
-      status_id: col.id,
       title: newTitle.trim(),
     });
     setNewTitle("");
@@ -68,7 +66,7 @@ export function BoardScreen({ client, boardId, onBack, onOpenTask }: Props) {
     );
   }
 
-  const statuses = [...board.statuses].sort((a, b) => a.position - b.position);
+  const swimlanes = [...board.swimlanes].sort((a, b) => a.position - b.position);
 
   return (
     <View style={styles.container}>
@@ -89,30 +87,26 @@ export function BoardScreen({ client, boardId, onBack, onOpenTask }: Props) {
       </View>
 
       <ScrollView>
-        {statuses.map((status: Status) => {
+        {swimlanes.map((lane: Swimlane) => {
           const tasks = board.tasks
-            .filter((t) => t.status_id === status.id)
+            .filter((t) => t.swimlane_id === lane.id)
             .sort((a, b) => a.position - b.position);
           return (
-            <View key={status.id} style={styles.column}>
+            <View key={lane.id} style={styles.column}>
               <Text style={styles.colHead}>
-                {status.name} · {tasks.length}
+                {lane.name} · {tasks.length}
               </Text>
-              {tasks.map((t) => {
-                const lane = board.swimlanes.find((l) => l.id === t.swimlane_id);
-                return (
-                  <Pressable key={t.id} style={styles.task} onPress={() => onOpenTask(t.id)}>
-                    <Text style={styles.taskTitle}>{t.title}</Text>
-                    <View style={styles.taskMeta}>
-                      <Text style={styles.taskLane}>{lane?.name}</Text>
-                      <Text style={styles.taskProgress}>{t.progress}%</Text>
-                    </View>
-                    <View style={styles.bar}>
-                      <View style={[styles.barFill, { width: `${t.progress}%` }]} />
-                    </View>
-                  </Pressable>
-                );
-              })}
+              {tasks.map((t) => (
+                <Pressable key={t.id} style={styles.task} onPress={() => onOpenTask(t.id)}>
+                  <Text style={styles.taskTitle}>{t.title}</Text>
+                  <View style={styles.taskMeta}>
+                    <Text style={styles.taskProgress}>{t.progress}%</Text>
+                  </View>
+                  <View style={styles.bar}>
+                    <View style={[styles.barFill, { width: `${t.progress}%` }]} />
+                  </View>
+                </Pressable>
+              ))}
               {tasks.length === 0 && <Text style={styles.muted}>—</Text>}
             </View>
           );

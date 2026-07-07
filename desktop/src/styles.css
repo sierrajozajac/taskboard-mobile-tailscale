@@ -130,45 +130,54 @@ body {
   font-size: 13px;
 }
 
-/* --- Grid --- */
-.grid {
-  display: grid;
-  gap: 10px;
-  align-items: start;
+/* --- Swimlane columns --- */
+.lanes {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 8px;
 }
-.grid-corner {
-  position: sticky;
-  top: 0;
-}
-.col-head {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-  padding: 6px 8px;
-  border-bottom: 2px solid var(--border);
-}
-.lane-head {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  padding-top: 10px;
-  writing-mode: horizontal-tb;
-}
-.cell {
+.lane {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 8px;
-  min-height: 84px;
+  width: 260px;
+  min-width: 260px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 10px;
+  max-height: calc(100vh - 160px);
 }
-.cell.over {
+.lane.over {
   border-color: var(--accent);
   background: #172233;
+}
+.lane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 6px;
+}
+.lane-count {
+  background: var(--panel-2);
+  border-radius: 999px;
+  padding: 1px 8px;
+  color: var(--muted);
+}
+.lane-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  min-height: 40px;
 }
 
 /* --- Task cards --- */

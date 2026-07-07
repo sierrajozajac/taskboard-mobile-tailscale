@@ -21,7 +21,6 @@ export function TaskDrawer({ task, board, onClose, onChanged, onDeleted }: Props
   }, [task.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const laneName = board.swimlanes.find((l) => l.id === task.swimlane_id)?.name ?? "";
-  const statusName = board.statuses.find((s) => s.id === task.status_id)?.name ?? "";
 
   async function saveField(patch: Partial<Pick<Task, "description" | "progress">>) {
     const updated = await makeClient().updateTask(task.id, patch);
@@ -45,7 +44,7 @@ export function TaskDrawer({ task, board, onClose, onChanged, onDeleted }: Props
     <div className="drawer">
       <div className="drawer-head">
         <div>
-          <div className="chip">{laneName} · {statusName}</div>
+          <div className="chip">{laneName}</div>
           <h2>{task.title}</h2>
         </div>
         <button className="icon-btn" onClick={onClose}>

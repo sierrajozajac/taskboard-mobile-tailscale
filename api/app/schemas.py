@@ -21,7 +21,7 @@ class BoardUpdate(BaseModel):
     position: Optional[float] = None
 
 
-# --- Swimlanes ---
+# --- Swimlanes (status columns) ---
 class SwimlaneCreate(BaseModel):
     name: str
     position: Optional[float] = None
@@ -32,22 +32,10 @@ class SwimlaneUpdate(BaseModel):
     position: Optional[float] = None
 
 
-# --- Statuses ---
-class StatusCreate(BaseModel):
-    name: str
-    position: Optional[float] = None
-
-
-class StatusUpdate(BaseModel):
-    name: Optional[str] = None
-    position: Optional[float] = None
-
-
 # --- Tasks ---
 class TaskCreate(BaseModel):
     board_id: int
-    swimlane_id: int
-    status_id: Optional[int] = None  # defaults to the board's first column
+    swimlane_id: Optional[int] = None  # defaults to the board's first swimlane
     title: str
     description: str = ""
     progress: int = Field(default=0, ge=0, le=100)
@@ -60,8 +48,7 @@ class TaskUpdate(BaseModel):
 
 
 class TaskMove(BaseModel):
-    status_id: int
-    swimlane_id: Optional[int] = None
+    swimlane_id: int
     position: Optional[float] = None
 
 
@@ -87,7 +74,6 @@ class TaskRead(BaseModel):
     id: int
     board_id: int
     swimlane_id: int
-    status_id: int
     title: str
     description: str
     progress: int
@@ -110,16 +96,6 @@ class SwimlaneRead(BaseModel):
         from_attributes = True
 
 
-class StatusRead(BaseModel):
-    id: int
-    board_id: int
-    name: str
-    position: float
-
-    class Config:
-        from_attributes = True
-
-
 class BoardSummary(BaseModel):
     id: int
     name: str
@@ -133,5 +109,4 @@ class BoardSummary(BaseModel):
 
 class BoardRead(BoardSummary):
     swimlanes: list[SwimlaneRead] = []
-    statuses: list[StatusRead] = []
     tasks: list[TaskRead] = []

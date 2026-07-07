@@ -7,7 +7,6 @@ import type {
   Comment,
   CreateTaskInput,
   MoveTaskInput,
-  Status,
   Swimlane,
   Task,
   UpdateTaskInput,
@@ -68,15 +67,9 @@ export class TaskBoardClient {
     return this.request<void>(`/boards/${id}`, { method: "DELETE" });
   }
 
-  // Swimlanes & statuses
+  // Swimlanes (status columns)
   createSwimlane(boardId: number, name: string) {
     return this.request<Swimlane>(`/boards/${boardId}/swimlanes`, {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    });
-  }
-  createStatus(boardId: number, name: string) {
-    return this.request<Status>(`/boards/${boardId}/statuses`, {
       method: "POST",
       body: JSON.stringify({ name }),
     });

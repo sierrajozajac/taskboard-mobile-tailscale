@@ -9,40 +9,41 @@ from __future__ import annotations
 from sqlmodel import Session, select
 
 from .db import engine, init_db
-from .models import DEFAULT_STATUSES, Board, Comment, Status, Swimlane, Task
+from .models import Board, Comment, Swimlane, Task
 
-# (board, description, [swimlanes], [(swimlane, status, title, progress, [comments])])
+# Each board defines its own swimlanes (status columns) and tasks placed in them.
 DEMO = [
     {
         "name": "DevOps Certs",
         "description": "Terraform -> SAA -> DVA -> CKA -> DOP Pro",
-        "swimlanes": ["Study", "Labs", "Exam Prep"],
+        "swimlanes": ["Pending", "In Progress", "Complete"],
         "tasks": [
-            ("Study", "In Progress", "Terraform: state & backends", 60, ["remote state on S3 next"]),
-            ("Study", "To Do", "Terraform: modules deep-dive", 0, []),
-            ("Labs", "In Progress", "Build a 2-tier VPC in Terraform", 40, []),
-            ("Exam Prep", "Backlog", "Book Terraform Associate exam", 0, ["aim for October"]),
-            ("Study", "Done", "Terraform: providers & resources", 100, []),
+            ("In Progress", "Terraform: state & backends", 60, ["remote state on S3 next"]),
+            ("Pending", "Terraform: modules deep-dive", 0, []),
+            ("In Progress", "Build a 2-tier VPC in Terraform", 40, []),
+            ("Pending", "Book the Terraform Associate exam", 0, ["aim for October"]),
+            ("Complete", "Terraform: providers & resources", 100, []),
         ],
     },
     {
         "name": "Calathea Codex",
         "description": "Substack essays, cuttings, field guides",
-        "swimlanes": ["Essays", "Cuttings", "Admin"],
+        "swimlanes": ["Pending", "Drafting", "In Review", "Published"],
         "tasks": [
-            ("Essays", "In Progress", "Draft: 'The Compost of Old Selves'", 30, ["needs a stronger turn"]),
-            ("Cuttings", "To Do", "Batch 5 cuttings for the next drop", 0, []),
-            ("Admin", "Backlog", "Refresh the About page copy", 0, []),
+            ("Drafting", "Essay: 'The Compost of Old Selves'", 30, ["needs a stronger turn"]),
+            ("Pending", "Batch 5 cuttings for the next drop", 0, []),
+            ("In Review", "Refresh the About page copy", 70, []),
+            ("Published", "Field guide: wiring a thermal printer", 100, []),
         ],
     },
     {
         "name": "Home",
         "description": "Life admin and the printer project",
-        "swimlanes": ["This Week", "Someday"],
+        "swimlanes": ["Pending", "In Progress", "Complete"],
         "tasks": [
-            ("This Week", "To Do", "Wire TaskBoard to the RP850", 20, ["console mode works!"]),
-            ("This Week", "In Progress", "Water the calatheas", 50, []),
-            ("Someday", "Backlog", "Sell the Notion template ('Unfurl')", 0, []),
+            ("In Progress", "Wire TaskBoard to the RP850", 80, ["prints on move!"]),
+            ("In Progress", "Water the calatheas", 50, []),
+            ("Pending", "Sell the Notion template ('Unfurl')", 0, []),
         ],
     },
 ]
@@ -57,19 +58,16 @@ def seed() -> None:
 
         for pos, spec in enumerate(DEMO):
             board = Board(name=spec["name"], description=spec["description"], position=pos)
-            board.statuses = [Status(name=n, position=i) for i, n in enumerate(DEFAULT_STATUSES)]
             board.swimlanes = [Swimlane(name=n, position=i) for i, n in enumerate(spec["swimlanes"])]
             session.add(board)
             session.commit()
             session.refresh(board)
 
             lanes = {s.name: s for s in board.swimlanes}
-            cols = {s.name: s for s in board.statuses}
-            for i, (lane, status, title, progress, comments) in enumerate(spec["tasks"]):
+            for i, (lane, title, progress, comments) in enumerate(spec["tasks"]):
                 task = Task(
                     board_id=board.id,
                     swimlane_id=lanes[lane].id,
-                    status_id=cols[status].id,
                     title=title,
                     progress=progress,
                     position=i,

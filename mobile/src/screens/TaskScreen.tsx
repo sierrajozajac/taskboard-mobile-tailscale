@@ -34,11 +34,11 @@ export function TaskScreen({ client, boardId, taskId, onBack }: Props) {
     load();
   }, [load]);
 
-  async function move(statusId: number) {
-    if (!task || statusId === task.status_id) return;
+  async function move(swimlaneId: number) {
+    if (!task || swimlaneId === task.swimlane_id) return;
     setBusy(true);
     try {
-      await client.moveTask(task.id, { status_id: statusId });
+      await client.moveTask(task.id, { swimlane_id: swimlaneId });
       await load();
     } finally {
       setBusy(false);
@@ -63,7 +63,7 @@ export function TaskScreen({ client, boardId, taskId, onBack }: Props) {
     );
   }
 
-  const statuses = [...board.statuses].sort((a, b) => a.position - b.position);
+  const swimlanes = [...board.swimlanes].sort((a, b) => a.position - b.position);
   const lane = board.swimlanes.find((l) => l.id === task.swimlane_id);
 
   return (
@@ -82,8 +82,8 @@ export function TaskScreen({ client, boardId, taskId, onBack }: Props) {
 
       <Text style={styles.label}>Move to (prints a receipt)</Text>
       <View style={styles.statusRow}>
-        {statuses.map((s) => {
-          const active = s.id === task.status_id;
+        {swimlanes.map((s) => {
+          const active = s.id === task.swimlane_id;
           return (
             <Pressable
               key={s.id}

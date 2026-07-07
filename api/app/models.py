@@ -1,12 +1,12 @@
 """SQLModel tables for TaskBoard.
 
-The shape is a Kanban grid per board (subject):
-  Board 1--* Swimlane   (horizontal rows)
-  Board 1--* Status     (vertical columns)
-  Board 1--* Task       (a task sits at one swimlane x status cell)
+The shape is a simple Kanban board per subject:
+  Board 1--* Swimlane   (the status columns: Pending, In Progress, Complete, ...)
+  Board 1--* Task       (a task lives in exactly one swimlane)
   Task  1--* Comment
 
-Deleting a board cascades to its swimlanes, statuses, tasks, and their comments.
+Moving a task to a different swimlane is the "status change" that prints a receipt.
+Deleting a board cascades to its swimlanes, tasks, and their comments.
 
 Note: no `from __future__ import annotations` here — SQLModel resolves relationship
 targets from the raw annotations, and stringized generics (list['Swimlane']) break it.
@@ -22,8 +22,11 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-# Default columns seeded for every new board.
-DEFAULT_STATUSES = ["Backlog", "To Do", "In Progress", "Done"]
+# Default swimlanes (status columns) seeded for every new board.
+DEFAULT_SWIMLANES = ["Pending", "In Progress", "Complete"]
+
+# Swimlane names that mean "finished" — landing here snaps a task to 100%.
+DONE_NAMES = {"complete", "completed", "done"}
 
 
 class Board(SQLModel, table=True):
@@ -43,14 +46,6 @@ class Board(SQLModel, table=True):
             "passive_deletes": True,
         },
     )
-    statuses: list["Status"] = Relationship(
-        back_populates="board",
-        sa_relationship_kwargs={
-            "cascade": "all, delete-orphan",
-            "order_by": "Status.position",
-            "passive_deletes": True,
-        },
-    )
     tasks: list["Task"] = Relationship(
         back_populates="board",
         sa_relationship_kwargs={"cascade": "all, delete-orphan", "passive_deletes": True},
@@ -58,6 +53,8 @@ class Board(SQLModel, table=True):
 
 
 class Swimlane(SQLModel, table=True):
+    """A status column on a board (e.g. Pending / In Progress / Complete)."""
+
     id: Optional[int] = Field(default=None, primary_key=True)
     board_id: int = Field(foreign_key="board.id", index=True, ondelete="CASCADE")
     name: str
@@ -66,20 +63,10 @@ class Swimlane(SQLModel, table=True):
     board: Optional[Board] = Relationship(back_populates="swimlanes")
 
 
-class Status(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    board_id: int = Field(foreign_key="board.id", index=True, ondelete="CASCADE")
-    name: str
-    position: float = 0.0
-
-    board: Optional[Board] = Relationship(back_populates="statuses")
-
-
 class Task(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     board_id: int = Field(foreign_key="board.id", index=True, ondelete="CASCADE")
     swimlane_id: int = Field(foreign_key="swimlane.id", index=True, ondelete="CASCADE")
-    status_id: int = Field(foreign_key="status.id", index=True, ondelete="CASCADE")
     title: str
     description: str = ""
     progress: int = 0  # 0-100

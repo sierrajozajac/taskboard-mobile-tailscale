@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from ..db import get_session
-from ..models import DEFAULT_STATUSES, Board, Status, Swimlane
+from ..models import DEFAULT_SWIMLANES, Board, Swimlane
 from ..schemas import BoardCreate, BoardRead, BoardSummary, BoardUpdate
 
 router = APIRouter(prefix="/boards", tags=["boards"])
@@ -28,9 +28,8 @@ def list_boards(session: Session = Depends(get_session)) -> list[Board]:
 def create_board(payload: BoardCreate, session: Session = Depends(get_session)) -> Board:
     count = len(session.exec(select(Board.id)).all())
     board = Board(name=payload.name, description=payload.description, position=count)
-    # Seed default columns and a starter swimlane.
-    board.statuses = [Status(name=name, position=i) for i, name in enumerate(DEFAULT_STATUSES)]
-    board.swimlanes = [Swimlane(name="General", position=0)]
+    # Seed the default status columns (swimlanes).
+    board.swimlanes = [Swimlane(name=name, position=i) for i, name in enumerate(DEFAULT_SWIMLANES)]
     session.add(board)
     session.commit()
     session.refresh(board)
