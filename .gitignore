@@ -27,6 +27,10 @@ venv/
 target/
 desktop/src-tauri/target/
 desktop/src-tauri/gen/
+# Generated icon binaries (regenerate with `npm run tauri icon`)
+desktop/src-tauri/icons/*.png
+desktop/src-tauri/icons/*.ico
+desktop/src-tauri/icons/*.icns
 
 # OS / editor
 .DS_Store

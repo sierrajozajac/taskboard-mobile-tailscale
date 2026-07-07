@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "TaskBoard",
+    "slug": "taskboard",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0f1216"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.sierra.taskboard"
+    }
+  }
+}
