@@ -5,12 +5,22 @@ import { getApiUrl, setApiUrl } from "../api";
 interface Props {
   boards: BoardSummary[];
   activeId: number | null;
+  open: boolean;
   onSelect: (id: number) => void;
   onCreate: () => void;
+  onClose: () => void;
   onSettingsChanged: () => void;
 }
 
-export function Sidebar({ boards, activeId, onSelect, onCreate, onSettingsChanged }: Props) {
+export function Sidebar({
+  boards,
+  activeId,
+  open,
+  onSelect,
+  onCreate,
+  onClose,
+  onSettingsChanged,
+}: Props) {
   const [url, setUrl] = useState(getApiUrl());
 
   function saveUrl() {
@@ -19,10 +29,13 @@ export function Sidebar({ boards, activeId, onSelect, onCreate, onSettingsChange
   }
 
   return (
-    <aside className="sidebar">
+    <aside className={"sidebar" + (open ? " open" : "")}>
       <div className="brand">
         <span className="logo">🧾</span>
         <span>TaskBoard</span>
+        <button className="nav-close" onClick={onClose} aria-label="Close boards">
+          ✕
+        </button>
       </div>
 
       <div className="section-label">Subjects</div>

@@ -18,6 +18,7 @@ export function App() {
   const [board, setBoard] = useState<Board | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [navOpen, setNavOpen] = useState(false); // mobile sidebar drawer
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -107,19 +108,37 @@ export function App() {
 
   const selectedTask = board?.tasks.find((t) => t.id === selectedTaskId) ?? null;
 
+  const activeBoardName = board?.name ?? boards.find((b) => b.id === boardId)?.name;
+
   return (
-    <div className="app">
+    <div className={"app" + (navOpen ? " nav-open" : "")}>
       <Sidebar
+        open={navOpen}
         boards={boards}
         activeId={boardId}
-        onSelect={setBoardId}
+        onSelect={(id) => {
+          setBoardId(id);
+          setNavOpen(false);
+        }}
         onCreate={handleCreateBoard}
+        onClose={() => setNavOpen(false)}
         onSettingsChanged={() => {
           loadBoards();
           refresh();
         }}
       />
+      <div className="scrim" onClick={() => setNavOpen(false)} />
       <main className="main">
+        <header className="topbar">
+          <button
+            className="hamburger"
+            onClick={() => setNavOpen((v) => !v)}
+            aria-label="Toggle boards"
+          >
+            ☰
+          </button>
+          <span className="topbar-title">{activeBoardName ?? "TaskBoard"}</span>
+        </header>
         {error && <div className="banner error">API error: {error}</div>}
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           {board ? (
