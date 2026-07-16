@@ -2,7 +2,7 @@
 
 ## The shape
 
-A **board** is a subject (e.g. "DevOps Certs"). Each board is a set of **swimlanes** — the status
+A **board** is a subject (e.g. "DevOps Certs"). Each board is a set of **swimlanes**, the status
 columns. A **task** lives in exactly one swimlane and carries progress and comments.
 
 ```
@@ -27,7 +27,7 @@ Defined in [`api/app/models.py`](../api/app/models.py) with SQLModel.
 
 **Relationships & deletes.** Every child carries a foreign key with `ON DELETE CASCADE`, and the
 SQLite connection enables `PRAGMA foreign_keys=ON` (see [`db.py`](../api/app/db.py)). Deleting a
-board removes its swimlanes, tasks, and those tasks' comments — the database handles the ordering, so
+board removes its swimlanes, tasks, and those tasks' comments; the database handles the ordering, so
 the ORM doesn't trip over the cross-references between tasks and their swimlanes.
 
 **Positions** are floats used only for ordering within a list; they are not identity.
